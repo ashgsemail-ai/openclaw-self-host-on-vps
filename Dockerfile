@@ -12,12 +12,15 @@ RUN apt-get update \
     zip \
   && rm -rf /var/lib/apt/lists/*
 
-RUN npm install -g openclaw@v2026.3.8
-
 WORKDIR /app
 
 COPY package.json pnpm-lock.yaml ./
-RUN corepack enable && pnpm install --frozen-lockfile --prod
+RUN corepack enable && pnpm install --no-frozen-lockfile --prod
+
+# Install openclaw locally into /app/node_modules so it persists in the
+# runtime container and can self-update. A global install goes to
+# /usr/local/lib/node_modules which is discarded in Railway's runtime stage.
+RUN npm install openclaw@latest --legacy-peer-deps
 
 COPY src ./src
 COPY entrypoint.sh ./entrypoint.sh
@@ -38,7 +41,8 @@ ENV HOMEBREW_CELLAR="/home/linuxbrew/.linuxbrew/Cellar"
 ENV HOMEBREW_REPOSITORY="/home/linuxbrew/.linuxbrew/Homebrew"
 
 ENV PORT=8080
-ENV OPENCLAW_ENTRY=/usr/local/lib/node_modules/openclaw/dist/entry.js
+# Point to the local install in /app/node_modules (survives Railway's runtime stage)
+ENV OPENCLAW_ENTRY=/app/node_modules/openclaw/dist/entry.js
 EXPOSE 8080
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s \
