@@ -39,12 +39,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 
 COPY package.json pnpm-lock.yaml ./
-RUN corepack enable && pnpm install --frozen-lockfile --prod
+RUN corepack enable && pnpm install --no-frozen-lockfile --prod
 
 # Install openclaw locally into /app/node_modules so it persists in the
 # runtime container and can self-update. A global install goes to
 # /usr/local/lib/node_modules which is discarded in Railway's runtime stage.
-RUN npm install openclaw@latest
+RUN npm install openclaw@latest --legacy-peer-deps
 
 COPY src ./src
 COPY entrypoint.sh ./entrypoint.sh
